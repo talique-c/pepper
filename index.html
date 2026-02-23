@@ -1,11 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pepper Tablet</title>
+  <script src="/libs/qi/2/qi.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Hello, World!</h1>
+
+  <main class="card">
+    <h1 id="greeting">Hello!</h1>
+    <p id="status">Connecting...</p>
+    
+    <input type="text" id="nameInput" placeholder="What is your name?">
+    <br>
+    <button onclick="confirmName()">Confirm & Speak</button>
+  </main>
+
+<script>
+let alMemory;
+let alSpeech;
+
+QiSession(function (session) {
+  document.getElementById("status").textContent = "Connected ✅";
+
+  // Load both Memory and Speech services
+  Promise.all([
+    session.service("ALMemory"),
+    session.service("ALAnimatedSpeech")
+  ]).then(function (services) {
+    alMemory = services[0];
+    alSpeech = services[1];
+    
+    // Check if name exists already
+    alMemory.getData("ui/name").then(function (val) {
+      if (val) document.getElementById("greeting").textContent = "Hello, " + val + "!";
+    });
+  });
+}, function () {
+  document.getElementById("status").textContent = "Disconnected ❌";
+});
+
+function confirmName() {
+  const input = document.getElementById("nameInput");
+  const name = input.value;
+
+  if (name && alMemory && alSpeech) {
+    // 1. Update the Memory/Event
+    alMemory.raiseEvent("ui/name", name);
+    
+    // 2. Update the Tablet UI
+    document.getElementById("greeting").textContent = "Hello, " + name + "!";
+    
+    // 3. Make Pepper Speak!
+    // The ^start tag adds a little wave/animation
+    const textToSay = "Nice to meet you, " + name + "! ^start(animations/Stand/Gestures/Hey_1)";
+    alSpeech.say(textToSay);
+
+    input.value = ""; // Clear input
+  } else {
+    alert("Please enter a name first!");
+  }
+}
+</script>
 </body>
 </html>
