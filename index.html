@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pepper Tablet</title>
-  <script src="/libs/qi/2/qi.js"></script>
+  
+  <script id="qi-script" src="http://169.254.72.132/libs/qi/2/qi.js"></script>
+  
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,10 +24,13 @@
 let alMemory;
 let alSpeech;
 
+// IMPORTANT: Replace this with your Pepper's IP again
+const robotIp = "169.254.72.132"; 
+
+// We use the robotIp here so GitHub knows which robot to talk to
 QiSession(function (session) {
   document.getElementById("status").textContent = "Connected ✅";
 
-  // Load both Memory and Speech services
   Promise.all([
     session.service("ALMemory"),
     session.service("ALAnimatedSpeech")
@@ -33,34 +38,29 @@ QiSession(function (session) {
     alMemory = services[0];
     alSpeech = services[1];
     
-    // Check if name exists already
     alMemory.getData("ui/name").then(function (val) {
       if (val) document.getElementById("greeting").textContent = "Hello, " + val + "!";
-    });
+    }).catch(function(err){ console.log("No name set yet."); });
   });
 }, function () {
   document.getElementById("status").textContent = "Disconnected ❌";
-});
+}, robotIp); 
 
 function confirmName() {
   const input = document.getElementById("nameInput");
   const name = input.value;
 
   if (name && alMemory && alSpeech) {
-    // 1. Update the Memory/Event
     alMemory.raiseEvent("ui/name", name);
-    
-    // 2. Update the Tablet UI
     document.getElementById("greeting").textContent = "Hello, " + name + "!";
     
-    // 3. Make Pepper Speak!
-    // The ^start tag adds a little wave/animation
+    // Pepper speaks and waves!
     const textToSay = "Nice to meet you, " + name + "! ^start(animations/Stand/Gestures/Hey_1)";
     alSpeech.say(textToSay);
 
-    input.value = ""; // Clear input
+    input.value = ""; 
   } else {
-    alert("Please enter a name first!");
+    alert("Still connecting or name is empty!");
   }
 }
 </script>
